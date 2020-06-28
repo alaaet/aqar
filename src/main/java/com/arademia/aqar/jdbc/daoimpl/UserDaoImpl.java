@@ -26,12 +26,12 @@ public class UserDaoImpl implements UserDao {
     }
 
     @Override
-    public int create(User user) {
+    public User create(User user) {
         user.setCreated_at(LocalDateTime.now());
         SqlParameterSource beanParams = new BeanPropertySqlParameterSource(user);
-        String sqlQuery = "INSERT INTO "+ Configs.USERS+" (first_name, last_name, password, email, created_at) VALUES(:first_name, :last_name, :password, :email, :created_at)";
-        if(namedParameterJdbcTemplate.update(sqlQuery, beanParams) == 1) return getLastUserId();
-        else return 0;
+        String sqlQuery = "INSERT INTO "+ Configs.USERS+" (first_name, last_name, password, email, created_at) VALUES(:firstName, :lastName, :password, :email, :created_at)";
+        if(namedParameterJdbcTemplate.update(sqlQuery, beanParams) == 1) return getUser(getLastUserId());
+        else return new User();
     }
 
     @Override
@@ -40,6 +40,7 @@ public class UserDaoImpl implements UserDao {
         String sqlQuery = "SELECT id, first_name, last_name, password, email, created_at "+
                 "FROM "+Configs.USERS+" WHERE id = :ID";
         User user = namedParameterJdbcTemplate.queryForObject(sqlQuery, params,new UserRawMapper());
+        user.setPassword(null);
         return user;
     }
 
@@ -53,12 +54,16 @@ public class UserDaoImpl implements UserDao {
     public List<User> getAllUsers() {
         String sqlQuery = "SELECT * FROM "+Configs.USERS;
         List<User> userList = namedParameterJdbcTemplate.query(sqlQuery, new UserRawMapper());
+        for (User user:userList
+             ) {
+            user.setPassword(null);
+        }
         return userList;
     }
 
     @Override
-    public boolean delete(User node) {
-        SqlParameterSource beanParams = new BeanPropertySqlParameterSource(node);
+    public boolean delete(User user) {
+        SqlParameterSource beanParams = new BeanPropertySqlParameterSource(user);
         String sqlQuery = "DELETE FROM "+Configs.USERS+" WHERE id = :id";
         return namedParameterJdbcTemplate.update(sqlQuery, beanParams) == 1;
     }
@@ -66,7 +71,7 @@ public class UserDaoImpl implements UserDao {
     @Override
     public boolean update(User user) {
         SqlParameterSource beanParams = new BeanPropertySqlParameterSource(user);
-        String sqlQuery = "UPDATE "+Configs.USERS+" SET first_name=:first_name, last_name=:last_name, password=:password, email=:email, created_at=:created_at "+"WHERE id = :id";
+        String sqlQuery = "UPDATE "+Configs.USERS+" SET first_name=:firstName, last_name=:lastName, password=:password, email=:email "+"WHERE id = :id";
         return namedParameterJdbcTemplate.update(sqlQuery,beanParams)==1;
     }
 }

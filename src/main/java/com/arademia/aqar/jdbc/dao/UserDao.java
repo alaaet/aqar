@@ -11,7 +11,7 @@ public interface UserDao {
     public void setDataSource(DataSource ds);
 
     // Create a record in the User table
-    public int create(User user);
+    public User create(User user);
 
     // Retrieve a single User
     public User getUser(Integer id);
@@ -23,8 +23,8 @@ public interface UserDao {
     public List<User> getAllUsers();
 
     // Delete a specific User from the table.
-    public boolean delete(User node);
+    public boolean delete(User user);
 
     // Update an existing User
-    public boolean update(User node);
+    public boolean update(User user);
 }
