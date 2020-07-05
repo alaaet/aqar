@@ -1,5 +1,6 @@
 package com.arademia.aqar.jdbc.daoimpl;
 
+import com.arademia.aqar.model.Authority;
 import com.arademia.aqar.model.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;

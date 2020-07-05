@@ -2,12 +2,11 @@ package com.arademia.aqar.util;
 
 public final class Mappings {
     // == constants ==
-    public static final String  LIST_USERS = "get_all_users";
-    public static final String  GET_USER = "get_user";
-    public static final String  ADD_USER = "add_user";
-    public static final String  UPDATE_USER = "update_user";
-    public static final String  DELETE_USER = "delete_user";
-    public static final String  INDEX = "/";
+    // USERS
+    public static final String  USERS = "/users";
+    public static final String  AUTHENTICATE = "/authenticate";
+    public static final String  REGISTER = "/register";
+
 
 
     // == constructors ==
