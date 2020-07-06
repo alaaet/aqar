@@ -5,4 +5,5 @@ public class ConfigsConst {
     public static final String USERS = "users";
     public static final String AUTHORITIES = "authorities";
 
+
 }
