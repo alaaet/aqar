@@ -1,6 +1,5 @@
 package com.arademia.aqar.jdbc.daoimpl;
 
-import com.arademia.aqar.model.Authority;
 import com.arademia.aqar.model.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;
@@ -19,7 +18,7 @@ public class UserRawMapper implements RowMapper<User> {
         user.setLastName(rs.getString("last_name"));
         user.setPassword(rs.getString("password"));
         user.setEmail(rs.getString("email"));
-        user.setCreated_at(convertToLocalDateTime(rs.getTimestamp("created_at")));
+        user.setCreatedAt(convertToLocalDateTime(rs.getTimestamp("created_at")));
 
         return user;
     }

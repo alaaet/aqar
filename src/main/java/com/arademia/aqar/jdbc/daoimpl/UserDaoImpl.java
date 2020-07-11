@@ -30,7 +30,7 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public User create(User user) {
-        user.setCreated_at(LocalDateTime.now());
+        user.setCreatedAt(LocalDateTime.now());
         SqlParameterSource beanParams = new BeanPropertySqlParameterSource(user);
         String sqlQuery = "INSERT INTO "+ ConfigsConst.USERS+" (first_name, last_name, password, email, created_at) VALUES(:firstName, :lastName, :password, :email, :created_at)";
         if(namedParameterJdbcTemplate.update(sqlQuery, beanParams) == 1) {

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Configuration >
+	<!-- Console Appender -->
+	<appender name="console"
+		class="org.apache.log4j.ConsoleAppender">
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n" />
+		</layout>
+	</appender>
+	<!-- All Levels Log File Appender -->
+	<appender name="allAppender"
+		class="org.apache.log4j.FileAppender">
+		<param name="Threshold" value="ALL" />
+		<param name="MaxFileSize" value="10MB" />
+		<param name="MaxBackupIndex" value="10" />
+		<param name="File" value="${java.log}" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="%d{MMM-dd-yyyy HH:mm:ss:SSS} %-5p %m%n" />
+		</layout>
+	</appender>
+
+	<logger name="com.comp.logger" additivity="false">
+		<appender-ref ref="allAppender" />
+		<appender-ref ref="console" />
+	</logger>
+
+	<!--sets the default priority log level -->
+	<root>
+		<priority value="all"></priority>
+		<appender-ref ref="console" />
+		<appender-ref ref="allAppender" />
+	</root>
+
+
+
+</Configuration>

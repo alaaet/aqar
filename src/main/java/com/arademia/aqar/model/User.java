@@ -2,27 +2,27 @@ package com.arademia.aqar.model;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.springframework.security.core.GrantedAuthority;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Data
 @EqualsAndHashCode(of = "id")
 public class User {
     private Integer id;
+    private Double credit;
     private String firstName,lastName,password,email;
     private List<String> authorities;
-    private LocalDateTime created_at;
+    private LocalDateTime createdAt;
 
-    public User(Integer id, String firstName, String lastName, String password, String email) {
+    public User(Integer id, Double credit, String firstName, String lastName, String password, String email) {
         this.id = id;
+        this.credit = credit;
         this.firstName = firstName;
         this.lastName = lastName;
         this.password = password;
         this.email = email;
-        this.created_at = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
     }
 
     public User() {
@@ -39,6 +39,14 @@ public class User {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public Double getCredit() {
+        return credit;
+    }
+
+    public void setCredit(Double credit) {
+        this.credit = credit;
     }
 
     public String getFirstName() {
@@ -73,12 +81,12 @@ public class User {
         this.email = email;
     }
 
-    public LocalDateTime getCreated_at() {
-        return created_at;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setCreated_at(LocalDateTime created_at) {
-        this.created_at = created_at;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
     public List<String> getAuthorities() {
