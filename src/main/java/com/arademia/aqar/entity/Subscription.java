@@ -26,7 +26,7 @@ public class Subscription {
     // Many TO ONE
     @ManyToOne
     @JoinColumn(name = "sub_type", referencedColumnName = "id")
-    private Integer subscriptionType;
+    private SubscriptionType subscriptionType;
 
     // ONE TO MANY
     @OneToMany(cascade = CascadeType.ALL)

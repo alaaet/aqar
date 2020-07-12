@@ -25,7 +25,8 @@ public class Conversation {
     @ManyToOne
     @JoinColumn(name = "recipient_id", referencedColumnName = "id")
     private User recipient;
-    @Column(name = "conv_id")
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "conv_id")
     private List<Message> messages = new ArrayList<Message>();
     @Column(name = "created_at")
     private LocalDateTime createdAt;

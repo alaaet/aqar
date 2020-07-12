@@ -28,7 +28,7 @@ public class Alert {
     private Boolean isActive;
 
     // MANY TO MANY
-    @OneToMany(cascade = CascadeType.ALL)
+    @ManyToMany
     @JoinTable(name = ConfigsConst.ALERT_QRS, joinColumns = {@JoinColumn(name = "alert_id")},inverseJoinColumns = {@JoinColumn(name = "qr_code_id")})
     private List<QrCode> qrCodes = new ArrayList<QrCode>();
 

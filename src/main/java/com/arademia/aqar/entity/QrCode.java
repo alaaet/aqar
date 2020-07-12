@@ -22,7 +22,7 @@ public class QrCode {
     private Integer userId;
 
     // MANY TO MANY
-    @OneToMany(mappedBy = "qrCodes")
+    @ManyToMany(mappedBy = "qrCodes")
     private List<Alert> alerts = new ArrayList<Alert>();
 
     // MANY TO ONE
