@@ -1,4 +1,4 @@
-package com.arademia.aqar.jdbc.daoimpl;
+package com.arademia.aqar.entity.constants;
 
 public class UserConstants {
     // ROLES

@@ -4,8 +4,8 @@ import com.arademia.aqar.config.model.AuthenticationRequest;
 import com.arademia.aqar.config.model.AuthenticationResponse;
 import com.arademia.aqar.config.service.MyUserDetailsService;
 import com.arademia.aqar.config.util.JwtUtil;
-import com.arademia.aqar.jdbc.dao.UserDao;
-import com.arademia.aqar.model.User;
+import com.arademia.aqar.entity.User;
+import com.arademia.aqar.repos.UserRepository;
 import com.arademia.aqar.util.Mappings;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -33,7 +34,7 @@ public class UserController {
     @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
     @Autowired
-    private UserDao userDao;
+    private UserRepository userRepository;
     @Autowired
     private AuthenticationManager authenticationManager;
     @Autowired
@@ -61,7 +62,7 @@ public class UserController {
     @PostMapping(value = Mappings.REGISTER)
     public ResponseEntity<User> registerUser(@RequestBody User user) throws URISyntaxException {
         user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
-        final User createdUser = userDao.create(user);
+        final User createdUser = userRepository.save(user);
         if (createdUser == null)
         {
             return ResponseEntity.notFound().build();
@@ -77,8 +78,8 @@ public class UserController {
     @PostMapping(value="/{id}")
     public ResponseEntity<String> updateUser(@RequestBody User user) throws URISyntaxException{
         user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
-        Boolean isUpdated = userDao.update(user);
-        if (!isUpdated)
+        final User updatedUser = userRepository.save(user);
+        if (updatedUser!= null)
         {
             return ResponseEntity.notFound().build();
         }
@@ -90,23 +91,25 @@ public class UserController {
 
 
 
+
     //////////////////// USER/ADMIN METHODS ////////////////////
     @PreAuthorize("hasRole('ROLE_USER') OR hasRole('ROLE_ADMIN')")
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUser(@PathVariable int id) {
-        final User user = userDao.getUser(id);
+    public ResponseEntity<Optional<User>> getUser(@PathVariable int id) {
+        final Optional<User> user = userRepository.findById(id);
         if (user == null) {
             return ResponseEntity.notFound().build();
         } else {
-            return new ResponseEntity<>(user, HttpStatus.OK);
+            return ResponseEntity.ok(user);
         }
     }
 
     @PreAuthorize("hasRole('ROLE_USER') OR hasRole('ROLE_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteUser(@RequestParam int id, HttpServletRequest request) throws URISyntaxException {
-        Boolean isDeleted = userDao.delete(userDao.getUser(id));
-        if (!isDeleted)
+        long initCount = userRepository.count();
+        userRepository.deleteById(id);
+        if (initCount<= userRepository.count())
         {
             return ResponseEntity.notFound().build();
         }
@@ -121,7 +124,7 @@ public class UserController {
     @PostMapping
     public ResponseEntity<User> saveUser(@RequestBody User user) throws URISyntaxException{
         user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
-        final User createdUser = userDao.create(user);
+        final User createdUser = userRepository.save(user);
         if (createdUser == null) {
             return ResponseEntity.notFound().build();
         } else {
@@ -135,6 +138,6 @@ public class UserController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping
     public ResponseEntity<List<User>> getUsers() {
-        return new ResponseEntity<>(userDao.getAllUsers(), HttpStatus.OK);
+        return  ResponseEntity.ok((List<User>)userRepository.findAll());
     }
 }

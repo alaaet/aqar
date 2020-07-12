@@ -1,4 +1,4 @@
-package com.arademia.aqar.model.billing;
+package com.arademia.aqar.entity.billing;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
