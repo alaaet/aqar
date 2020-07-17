@@ -8,6 +8,8 @@ public final class Mappings {
     public static final String  USERS = "/users";
     public static final String  AUTHENTICATE = "/authenticate";
     public static final String  REGISTER = "/register";
+    public static final String  REVOKE_TOKEN = "/revoke-token";
+    public static final String  REFRESH_TOKEN = "/refresh-token";
 
     // FILES
     public static final String  FILES = "/files";

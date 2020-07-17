@@ -1,7 +1,9 @@
 package com.arademia.aqar.entity;
 
 import com.arademia.aqar.config.ConfigsConst;
+import com.arademia.aqar.config.model.NewOrUpdateUserRequest;
 import com.arademia.aqar.entity.billing.BillingInfo;
+import com.arademia.aqar.entity.constants.UserConstants;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -11,13 +13,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-@Table(name = ConfigsConst.USERS)
+@Table(name = ConfigsConst.USERS,uniqueConstraints = {@UniqueConstraint(columnNames = {"email"})})
 @Entity
 @EqualsAndHashCode(of = "id")
 public class User {
     @Id
     @Column(name = "id")
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     @Column(name = "credit")
     private Double credit;
@@ -25,43 +27,84 @@ public class User {
     private String firstName;
     @Column(name = "last_name")
     private String lastName;
+    @Column(name = "role")
+    private UserConstants.Role role;
     @Column(name = "password")
     private String password;
     @Column(name = "email")
     private String email;
+    @Column(name = "title")
+    private UserConstants.Title title;
+    @Column(name = "is_verified")
+    private Boolean isVerified;
+    @Column(name = "img_url")
+    private String profileImage;
+    
     // ONE TO MANY
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "user_id")
-    private List<Authority> authorities = new ArrayList<Authority>();
-    @OneToMany(cascade = CascadeType.ALL)
+    @Transient
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "user_id")
     private List<BillingInfo> billingInfo = new ArrayList<BillingInfo>();
-    @OneToMany(cascade = CascadeType.ALL)
+    @Transient
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "user_id")
     private List<Address> addresses = new ArrayList<Address>();
-    @OneToMany(cascade = CascadeType.ALL)
+    @Transient
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "user_id")
     private List<Alert> alerts = new ArrayList<Alert>();
-    @OneToMany(cascade = CascadeType.ALL)
+    @Transient
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "user_id")
     private List<AuthProvider> authProviders = new ArrayList<AuthProvider>();
-    @OneToMany(cascade = CascadeType.ALL)
+    @Transient
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "user_id")
     private List<ContactDetail> contactDetails = new ArrayList<ContactDetail>();
-    @OneToMany(cascade = CascadeType.ALL)
+    @Transient
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "user_id")
     private List<QrCode> qrCodes = new ArrayList<QrCode>();
 
 
     // ONE TO ONE
+    @Transient
     @OneToOne(mappedBy = "user")
     private Subscription subscription;
 
     // DATE TIME CONTROLS
+    @Column(name = "birthday")
+    private LocalDateTime birthday;
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    // CONSTRUCTORS
+
+    public User(String firstName, String lastName, String password, String email, UserConstants.Title title) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.password = password;
+        this.email = email;
+        this.createdAt = this.updatedAt = this.birthday = LocalDateTime.now();
+        this.title = title;
+        this.role = UserConstants.Role.USER;
+    }
+    public User() {
+        super();
+        this.createdAt = this.updatedAt = this.birthday = LocalDateTime.now();
+        this.title = UserConstants.Title.Mr;
+        this.role = UserConstants.Role.USER;
+    }
+    public User(NewOrUpdateUserRequest rowUser){
+        this.title = UserConstants.Title.valueOf(rowUser.getTitle());
+        this.firstName = rowUser.getFirstName();
+        this.lastName = rowUser.getLastName();
+        this.email = rowUser.getEmail();
+        this.role = UserConstants.Role.valueOf(rowUser.getRole());
+        this.createdAt = this.updatedAt = this.birthday = LocalDateTime.now();
+    }
 }

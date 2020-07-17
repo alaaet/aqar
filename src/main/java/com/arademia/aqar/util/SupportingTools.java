@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SupportingTools {
 
@@ -37,6 +39,14 @@ public class SupportingTools {
         if(systemipaddress.contains("167.86.81"))
             return true;
         else return false;
+    }
+
+
+    public boolean isValidEmail(String input){
+        String regex = "^(.+)@(.+)$";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(input);
+        return matcher.matches();
     }
 
 }
