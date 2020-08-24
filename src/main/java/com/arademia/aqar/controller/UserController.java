@@ -3,32 +3,32 @@ package com.arademia.aqar.controller;
 import com.arademia.aqar.config.model.*;
 import com.arademia.aqar.config.service.MyUserDetailsService;
 import com.arademia.aqar.config.util.JwtUtil;
+import com.arademia.aqar.entity.AuthProvider;
 import com.arademia.aqar.entity.User;
 import com.arademia.aqar.entity.constants.UserConstants;
+import com.arademia.aqar.repos.AuthProviderRepository;
 import com.arademia.aqar.repos.UserRepository;
 import com.arademia.aqar.util.Mappings;
 import com.arademia.aqar.util.SupportingTools;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -40,6 +40,8 @@ public class UserController {
     private BCryptPasswordEncoder bCryptPasswordEncoder;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private AuthProviderRepository authProviderRepository;
     @Autowired
     private AuthenticationManager authenticationManager;
     @Autowired
@@ -64,9 +66,47 @@ public class UserController {
         final UserDetails userDetails = userDetailsService
                 .loadUserByUsername(authenticationRequest.getUsername());
         final String jwt = jwtTokenUtil.generateToken(userDetails);
-        final User user = userRepository.getUserByEmail(authenticationRequest.getUsername());
+        final User user = userRepository.getUserByUsername(authenticationRequest.getUsername());
         AuthenticationResponse res = new AuthenticationResponse(user,jwt);
         return ResponseEntity.ok(res);
+    }
+
+    @RequestMapping(value = Mappings.SOCIAL_AUTHENTICATE, method = RequestMethod.POST)
+    public ResponseEntity<?> createAuthenticationTokenFromSocialAccount(@RequestBody SocialAuthenticationRequest authenticationRequest) throws Exception{
+        System.out.println("auth-request: "+authenticationRequest.toString());
+        AuthProvider socialAccount = new AuthProvider();
+        final UserDetails userDetails = userDetailsService
+                .loadUserByEmail(authenticationRequest.getEmail());
+        if(userDetails==null){
+            // create both account
+            User newUser = new User();
+            newUser.setEmail(authenticationRequest.getEmail());
+            newUser.setFirstName(authenticationRequest.getGiven_name());
+            newUser.setLastName(authenticationRequest.getFamily_name());
+            newUser.setProfileImage(authenticationRequest.getPicture());
+            newUser.setUsername(authenticationRequest.getName());
+            final User createdUser = userRepository.save(newUser);
+            // create social account
+            socialAccount.setProviderName(authenticationRequest.getProvider());
+            socialAccount.setSocialId(authenticationRequest.getSub());
+            socialAccount.setUserId(createdUser.getId());
+            authProviderRepository.save(socialAccount);
+            return ResponseEntity.ok(createdUser);
+        }else{
+            final String jwt = jwtTokenUtil.generateToken(userDetails);
+            final User user = userRepository.getUserByEmail(authenticationRequest.getEmail());
+            AuthenticationResponse res = new AuthenticationResponse(user,jwt);
+            // check if social account is attached
+            AuthProvider retrievedSocialAccount = authProviderRepository.getSocialAccountBySocialId(authenticationRequest.getSub());
+            if(retrievedSocialAccount == null){
+                // create social account
+                socialAccount.setProviderName(authenticationRequest.getProvider());
+                socialAccount.setSocialId(authenticationRequest.getSub());
+                socialAccount.setUserId(user.getId());
+                authProviderRepository.save(socialAccount);
+            }
+            return ResponseEntity.ok(res);
+        }
     }
 
     @PostMapping(value = Mappings.REGISTER)
@@ -75,9 +115,11 @@ public class UserController {
         {
             return ResponseEntity.badRequest().body(new ErrorResponse("Email field is not correct!"));
         }
-        rowUser.setPassword(bCryptPasswordEncoder.encode(rowUser.getPassword()));
         try{
-            final User createdUser = userRepository.save(new User(rowUser));
+            rowUser.setRole(UserConstants.Role.USER.toString());
+            User tempUser = new User(rowUser);
+            if(rowUser.getPassword()!=null && !rowUser.getPassword().isEmpty() && rowUser.getPassword().equals(rowUser.getConfirmPassword())) tempUser.setPassword(bCryptPasswordEncoder.encode(rowUser.getPassword()));
+            final User createdUser = userRepository.save(tempUser);
             return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
         }
         catch (Exception e){
@@ -93,7 +135,7 @@ public class UserController {
     public ResponseEntity<?> refreshAuthenticationToken(@RequestBody String row_jwt) throws Exception{
         if(row_jwt != null && !row_jwt.isEmpty() && !row_jwt.equals("null")){
             String jwt = row_jwt.replaceAll("^[\"']+|[\"']+$", "");
-            String username = jwtTokenUtil.extractUsername(jwt);
+            String username = jwtTokenUtil.extractUsername(jwt).toString();
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
             if (jwtTokenUtil.validateToken(jwt,userDetails)){
                 final User user = userRepository.getUserByEmail(username);
@@ -137,7 +179,7 @@ public class UserController {
         user.setLastName(rowUser.getLastName());
         user.setEmail(rowUser.getEmail());
         if(rowUser.getRole()!=null && !rowUser.getRole().isEmpty()) user.setRole(UserConstants.Role.valueOf(rowUser.getRole()));
-        if(rowUser.getPassword()!=null && !rowUser.getPassword().isEmpty() && rowUser.getPassword().equals(rowUser.getConfirmPassword())) user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+        if(rowUser.getPassword()!=null && !rowUser.getPassword().isEmpty() && rowUser.getPassword().equals(rowUser.getConfirmPassword())) user.setPassword(bCryptPasswordEncoder.encode(rowUser.getPassword()));
         final User updatedUser = userRepository. save(user);
         UpdateUserResponse response = new UpdateUserResponse(updatedUser);
         if (updatedUser!= null) return ResponseEntity.ok(response);

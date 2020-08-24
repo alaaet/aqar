@@ -10,4 +10,6 @@ public interface UserRepository extends CrudRepository<User,Integer> {
 
     @Query("SELECT * FROM "+ ConfigsConst.USERS+" u WHERE u.email = :email")
     User getUserByEmail(@Param("email") String email);
+    @Query("SELECT * FROM "+ ConfigsConst.USERS+" u WHERE u.username = :username")
+    User getUserByUsername(@Param("username") String username);
 }

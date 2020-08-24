@@ -7,6 +7,7 @@ import lombok.Data;
 public class GetUserResponse {
     private Integer id;
     private String title;
+    private String username;
     private String firstName;
     private String lastName;
     private String email;
@@ -14,6 +15,7 @@ public class GetUserResponse {
 
     public GetUserResponse(User usr){
             this.id = usr.getId();
+            this.username=usr.getUsername();
             this.email = usr.getEmail();
             this.firstName = usr.getFirstName();
             this.lastName = usr.getLastName();

@@ -23,13 +23,26 @@ public class MyUserDetailsService implements UserDetailsService {
     private UserRepository  userRepository;
     @Override
     @Transactional
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         // Get the User object
-        com.arademia.aqar.entity.User user = userRepository.getUserByEmail(email);
+        com.arademia.aqar.entity.User user = userRepository.getUserByUsername(username);
         // Get Roles of the User
         Set<SimpleGrantedAuthority> authorities = new HashSet<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
         // Return the UserDetails object
         return new User(user.getEmail(),user.getPassword(), authorities);
+    }
+    @Transactional
+    public UserDetails loadUserByEmail(String email) throws UsernameNotFoundException {
+        // Get the User object
+         com.arademia.aqar.entity.User user = userRepository.getUserByEmail(email);
+        if (user==null) return null;
+        // Get Roles of the User
+        Set<SimpleGrantedAuthority> authorities = new HashSet<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
+        // Return the UserDetails object
+        String pass = user.getPassword();
+        if (pass==null || pass.isEmpty()) pass = "test";
+        return new User(user.getEmail(),pass, authorities);
     }
 }

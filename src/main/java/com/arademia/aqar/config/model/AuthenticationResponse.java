@@ -9,6 +9,7 @@ public class AuthenticationResponse {
     private Integer id;
     private String email;
     private String title;
+    private String username;
     private String firstName;
     private String lastName;
     private String role;
@@ -17,6 +18,7 @@ public class AuthenticationResponse {
     public AuthenticationResponse(User user, String jwt) {
         this.id = user.getId();
         this.email = user.getEmail();
+        this.username = user.getUsername();
         this.title = user.getTitle().toString();
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();

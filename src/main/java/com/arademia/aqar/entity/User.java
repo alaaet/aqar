@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-@Table(name = ConfigsConst.USERS,uniqueConstraints = {@UniqueConstraint(columnNames = {"email"})})
+@Table(name = ConfigsConst.USERS,uniqueConstraints = {@UniqueConstraint(columnNames = {"email","username"})})
 @Entity
 @EqualsAndHashCode(of = "id")
 public class User {
@@ -31,6 +31,8 @@ public class User {
     private UserConstants.Role role;
     @Column(name = "password")
     private String password;
+    @Column(name = "username")
+    private String username;
     @Column(name = "email")
     private String email;
     @Column(name = "title")

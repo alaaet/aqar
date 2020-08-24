@@ -1,8 +1,11 @@
 package com.arademia.aqar.config.util;
 
+import com.arademia.aqar.entity.User;
+import com.arademia.aqar.repos.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -14,9 +17,12 @@ import java.util.function.Function;
 @Service
 public class JwtUtil {
     private String SECRET_KEY = "secret";
+    @Autowired
+    private UserRepository userRepository;
 
-    public String extractUsername(String token){
-        return extractClaim(token, Claims::getSubject);
+    public Object extractUsername(String token){
+        final Claims claims = extractAllClaims(token);
+        return claims.get("usr");
     }
 
     private Date extractExpiration(String token){
@@ -36,7 +42,11 @@ public class JwtUtil {
     }
     public String generateToken(UserDetails userDetails){
         Map<String, Object> claims = new HashMap<>();
-       return createToken(claims, userDetails.getUsername());
+        User user = userRepository.getUserByEmail(userDetails.getUsername());
+        claims.put("usr", user.getUsername());
+        claims.put("fname", user.getFirstName());
+        claims.put("lname", user.getLastName());
+       return createToken(claims, user.getEmail());
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
@@ -46,7 +56,8 @@ public class JwtUtil {
     }
 
     public Boolean validateToken(String token, UserDetails userDetails){
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        final String username = extractUsername(token).toString();
+        User user = userRepository.getUserByEmail(userDetails.getUsername());
+        return (username.equals(user.getUsername()) && !isTokenExpired(token));
     }
 }
