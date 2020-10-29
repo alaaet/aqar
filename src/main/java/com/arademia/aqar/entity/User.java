@@ -6,6 +6,7 @@ import com.arademia.aqar.entity.billing.BillingInfo;
 import com.arademia.aqar.entity.constants.UserConstants;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.Where;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -15,6 +16,7 @@ import java.util.List;
 @Data
 @Table(name = ConfigsConst.USERS,uniqueConstraints = {@UniqueConstraint(columnNames = {"email","username"})})
 @Entity
+@Where(clause="! deleted_at is null")
 @EqualsAndHashCode(of = "id")
 public class User {
     @Id
@@ -62,10 +64,6 @@ public class User {
     @Transient
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "user_id")
-    private List<ContactDetail> contactDetails = new ArrayList<ContactDetail>();
-    @Transient
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "user_id")
     private List<QrCode> qrCodes = new ArrayList<QrCode>();
 
 
@@ -73,6 +71,9 @@ public class User {
     @Transient
     @OneToOne(mappedBy = "user")
     private Subscription subscription;
+    @Transient
+    @OneToOne(mappedBy = "user")
+    private PublicProfile publicProfile;
 
     // DATE TIME CONTROLS
     @Column(name = "birthday")
@@ -87,6 +88,7 @@ public class User {
     // CONSTRUCTORS
 
     public User(String firstName, String lastName, String password, String email, UserConstants.Title title) {
+        this.publicProfile = new PublicProfile(firstName+" "+lastName,email,true);
         this.firstName = firstName;
         this.lastName = lastName;
         this.password = password;
@@ -97,16 +99,10 @@ public class User {
     }
     public User() {
         super();
+        this.publicProfile = new PublicProfile();
         this.createdAt = this.updatedAt = this.birthday = LocalDateTime.now();
         this.title = UserConstants.Title.Mr;
         this.role = UserConstants.Role.USER;
     }
-    public User(NewOrUpdateUserRequest rowUser){
-        this.title = UserConstants.Title.valueOf(rowUser.getTitle());
-        this.firstName = rowUser.getFirstName();
-        this.lastName = rowUser.getLastName();
-        this.email = rowUser.getEmail();
-        this.role = UserConstants.Role.valueOf(rowUser.getRole());
-        this.createdAt = this.updatedAt = this.birthday = LocalDateTime.now();
-    }
+
 }

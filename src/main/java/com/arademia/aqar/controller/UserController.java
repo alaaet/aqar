@@ -4,10 +4,13 @@ import com.arademia.aqar.config.model.*;
 import com.arademia.aqar.config.service.MyUserDetailsService;
 import com.arademia.aqar.config.util.JwtUtil;
 import com.arademia.aqar.entity.AuthProvider;
+import com.arademia.aqar.entity.ContactDetail;
+import com.arademia.aqar.entity.PublicProfile;
 import com.arademia.aqar.entity.User;
 import com.arademia.aqar.entity.constants.UserConstants;
-import com.arademia.aqar.repos.AuthProviderRepository;
-import com.arademia.aqar.repos.UserRepository;
+import com.arademia.aqar.entity.util.ModelConverter;
+import com.arademia.aqar.repos.*;
+import com.arademia.aqar.storage.StorageService;
 import com.arademia.aqar.util.Mappings;
 import com.arademia.aqar.util.SupportingTools;
 import lombok.extern.slf4j.Slf4j;
@@ -18,17 +21,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.security.Principal;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Slf4j
 @RestController
@@ -41,7 +48,13 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
     @Autowired
+    private TagRepository tagRepository;
+    @Autowired
     private AuthProviderRepository authProviderRepository;
+    @Autowired
+    private PublicProfileRepository ppRepo;
+    @Autowired
+    private ContactDetailRepository contactRepo;
     @Autowired
     private AuthenticationManager authenticationManager;
     @Autowired
@@ -49,7 +62,14 @@ public class UserController {
     @Autowired
     private JwtUtil jwtTokenUtil;
     private static SupportingTools util = new SupportingTools();
+    @Autowired
+    private ModelConverter converter;
+    @Autowired
+    private final StorageService storageService;
 
+    public UserController(StorageService storageService) {
+        this.storageService = storageService;
+    }
 
     //////////////////// PUBLIC METHODS ////////////////////
     @RequestMapping(value = Mappings.AUTHENTICATE, method = RequestMethod.POST)
@@ -61,12 +81,12 @@ public class UserController {
             );
         }catch (AuthenticationException e){
             System.out.println(e.getLocalizedMessage()+"/n"+e.getMessage());
-            return ResponseEntity.badRequest().body(new ErrorResponse("Email or password is incorrect"));
+            return ResponseEntity.badRequest().body(new ResponseMessage("Email or password is incorrect"));
         }
         final UserDetails userDetails = userDetailsService
                 .loadUserByUsername(authenticationRequest.getUsername());
         final String jwt = jwtTokenUtil.generateToken(userDetails);
-        final User user = userRepository.getUserByUsername(authenticationRequest.getUsername());
+        final User user = userRepository.getUserByUsernameIgnoreCase(authenticationRequest.getUsername());
         AuthenticationResponse res = new AuthenticationResponse(user,jwt);
         return ResponseEntity.ok(res);
     }
@@ -75,37 +95,50 @@ public class UserController {
     public ResponseEntity<?> createAuthenticationTokenFromSocialAccount(@RequestBody SocialAuthenticationRequest authenticationRequest) throws Exception{
         System.out.println("auth-request: "+authenticationRequest.toString());
         AuthProvider socialAccount = new AuthProvider();
-        final UserDetails userDetails = userDetailsService
-                .loadUserByEmail(authenticationRequest.getEmail());
+        UserDetails userDetails = userDetailsService.loadUserByEmail(authenticationRequest.getEmail());
+        User usr;
         if(userDetails==null){
-            // create both account
+            // create native and social accounts
             User newUser = new User();
             newUser.setEmail(authenticationRequest.getEmail());
             newUser.setFirstName(authenticationRequest.getGiven_name());
             newUser.setLastName(authenticationRequest.getFamily_name());
             newUser.setProfileImage(authenticationRequest.getPicture());
             newUser.setUsername(authenticationRequest.getName());
-            final User createdUser = userRepository.save(newUser);
+            usr = userRepository.save(newUser);
+            userDetails = userDetailsService.loadUserByEmail(usr.getEmail());
             // create social account
             socialAccount.setProviderName(authenticationRequest.getProvider());
             socialAccount.setSocialId(authenticationRequest.getSub());
-            socialAccount.setUserId(createdUser.getId());
+            socialAccount.setUserId(usr.getId());
             authProviderRepository.save(socialAccount);
-            return ResponseEntity.ok(createdUser);
         }else{
-            final String jwt = jwtTokenUtil.generateToken(userDetails);
-            final User user = userRepository.getUserByEmail(authenticationRequest.getEmail());
-            AuthenticationResponse res = new AuthenticationResponse(user,jwt);
+            usr = userRepository.getUserByEmail(authenticationRequest.getEmail());
+            if(usr.getProfileImage()==null )usr.setProfileImage(authenticationRequest.getPicture());
             // check if social account is attached
             AuthProvider retrievedSocialAccount = authProviderRepository.getSocialAccountBySocialId(authenticationRequest.getSub());
             if(retrievedSocialAccount == null){
                 // create social account
                 socialAccount.setProviderName(authenticationRequest.getProvider());
                 socialAccount.setSocialId(authenticationRequest.getSub());
-                socialAccount.setUserId(user.getId());
+                socialAccount.setUserId(usr.getId());
                 authProviderRepository.save(socialAccount);
             }
+        }
+        final String jwt = jwtTokenUtil.generateToken(userDetails);
+        AuthenticationResponse res = new AuthenticationResponse(usr,jwt);
+        // Get Roles of the User
+        Set<SimpleGrantedAuthority> authorities = new HashSet<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + usr.getRole()));
+        try {
+            Authentication authentication=new UsernamePasswordAuthenticationToken(
+                    userDetails,userDetails.getPassword(),authorities);
+            //authenticationManager.authenticate(authentication);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
             return ResponseEntity.ok(res);
+        }catch (AuthenticationException e){
+            System.out.println(e.getLocalizedMessage()+"/n"+e.getMessage());
+            return ResponseEntity.badRequest().body(new ResponseMessage("Email or password is incorrect"));
         }
     }
 
@@ -113,21 +146,21 @@ public class UserController {
     public ResponseEntity<?> registerUser(@RequestBody NewOrUpdateUserRequest rowUser) throws URISyntaxException {
         if(!util.isValidEmail(rowUser.getEmail()))
         {
-            return ResponseEntity.badRequest().body(new ErrorResponse("Email field is not correct!"));
+            return ResponseEntity.badRequest().body(new ResponseMessage("Email field is not correct!"));
         }
         try{
             rowUser.setRole(UserConstants.Role.USER.toString());
-            User tempUser = new User(rowUser);
+            User tempUser = converter.toUser(rowUser);
             if(rowUser.getPassword()!=null && !rowUser.getPassword().isEmpty() && rowUser.getPassword().equals(rowUser.getConfirmPassword())) tempUser.setPassword(bCryptPasswordEncoder.encode(rowUser.getPassword()));
             final User createdUser = userRepository.save(tempUser);
             return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
         }
         catch (Exception e){
             if (e instanceof DataIntegrityViolationException){
-                return ResponseEntity.badRequest().body(new ErrorResponse("User already exists, try to log in"));
+                return ResponseEntity.badRequest().body(new ResponseMessage("User already exists, try to log in"));
 
             }
-            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+            return ResponseEntity.badRequest().body(new ResponseMessage(e.getMessage()));
         }
     }
 
@@ -143,18 +176,57 @@ public class UserController {
                 return ResponseEntity.ok(res);
             }
             else{
-                return ResponseEntity.badRequest().body(new ErrorResponse("Please log in again"));
+                return ResponseEntity.badRequest().body(new ResponseMessage("Please log in again"));
             }
         }
         else{
-            return ResponseEntity.badRequest().body(new ErrorResponse("Please log in again"));
+            return ResponseEntity.badRequest().body(new ResponseMessage("Please log in again"));
+        }
+    }
+
+    @GetMapping(Mappings.BY_TAG_CODE+"/{tagCode}")
+    public ResponseEntity<?> getPublicProfileByTagCode(@PathVariable("tagCode") String tagCode) {
+        try {
+             PublicProfile publicProfile= ppRepo.getPublicProfileByUserId(tagRepository.getTagsByValue(tagCode).get(0).getUserId());
+            if (publicProfile ==null) {
+                return ResponseEntity.badRequest().body(new ResponseMessage("We could not fetch this user,please contact us"));
+            } else {
+                publicProfile.setContactDetails(contactRepo.getContactDetailsByPublicProfileId(publicProfile.getId()));
+                GetPublicDataResponse res = new GetPublicDataResponse(publicProfile);
+                return ResponseEntity.ok(res);
+            }
+        }
+        catch (Exception e){
+            return ResponseEntity.badRequest().body(new ResponseMessage("We could not fetch this user,please contact us"));
         }
     }
 
     //////////////////// USER METHODS ////////////////////
+    @PreAuthorize("hasRole('ROLE_USER')")
+    @PostMapping(value = Mappings.UPDATE_PUBLIC_PROFILE)
+    public ResponseEntity<?> updatePublicProfile(@RequestBody PublicProfile pp,HttpServletRequest request) {
+        Principal principal = request.getUserPrincipal();
+        String email = principal.getName();
+        User usr = userRepository.getUserByEmail(email);
+        pp.setUser(usr);
+        for (ContactDetail cnt:pp.getContactDetails()) {
+            contactRepo.save(cnt);
+        }
+        ppRepo.save(pp);
+        return ResponseEntity.ok(new ResponseMessage("Your public profile has been updated!"));
+    }
 
-
-
+    @PreAuthorize("hasRole('ROLE_USER')")
+    @GetMapping(value = Mappings.GET_PUBLIC_PROFILE)
+    public ResponseEntity<?> getPublicProfile(HttpServletRequest request) {
+        Principal principal = request.getUserPrincipal();
+        String email = principal.getName();
+        User usr = userRepository.getUserByEmail(email);
+        PublicProfile pp = ppRepo.getPublicProfileByUserId(usr.getId());
+        pp.setContactDetails(contactRepo.getContactDetailsByPublicProfileId(pp.getId()));
+        GetPublicDataResponse res = new GetPublicDataResponse(pp);
+        return ResponseEntity.ok(res);
+    }
 
 
 
@@ -164,11 +236,32 @@ public class UserController {
     public ResponseEntity<?> getUser(@PathVariable("id") int id) {
         final Optional<User> user = userRepository.findById(id);
         if (user == null) {
-            return ResponseEntity.badRequest().body(new ErrorResponse("We could not fetch this user,please contact us"));
+            return ResponseEntity.badRequest().body(new ResponseMessage("We could not fetch this user,please contact us"));
         } else {
             return ResponseEntity.ok(user);
         }
     }
+
+    @PreAuthorize("hasRole('ROLE_USER') OR hasRole('ROLE_ADMIN')")
+    @PostMapping(value = Mappings.UPLOAD_PROFILE_PICTURE)
+    public ResponseEntity<?> handleFileUpload(@RequestParam("file") MultipartFile file,HttpServletRequest request) {
+        Principal principal = request.getUserPrincipal();
+        String email = principal.getName();
+        User usr = userRepository.getUserByEmail(email);
+        storageService.store(file);
+        String filePath = storageService.load(file.getOriginalFilename()).toString();
+        if(!filePath.isEmpty()){
+            String[] path = filePath.split("webapps");
+            String ip = util.getIp();
+            if(ip!=null) {
+                usr.setProfileImage("http://"+util.getIp()+":8080"+path[1]);
+                userRepository.save(usr);
+                return ResponseEntity.ok(new ResponseMessage("http://"+util.getIp()+":8080"+path[1]));
+            }
+        }
+        return ResponseEntity.badRequest().body(new ResponseMessage("We could not  update the profile picture,please contact us"));
+    }
+
 
     @PreAuthorize("hasRole('ROLE_USER') OR hasRole('ROLE_ADMIN')")
     @RequestMapping(value = "/{id}", method = {RequestMethod.POST,RequestMethod.PUT})
@@ -183,18 +276,25 @@ public class UserController {
         final User updatedUser = userRepository. save(user);
         UpdateUserResponse response = new UpdateUserResponse(updatedUser);
         if (updatedUser!= null) return ResponseEntity.ok(response);
-        else return ResponseEntity.badRequest().body(new ErrorResponse("Update operation failed, please contact us"));
+        else return ResponseEntity.badRequest().body(new ResponseMessage("Update operation failed, please contact us"));
     }
 
     @PreAuthorize("hasRole('ROLE_USER') OR hasRole('ROLE_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable("id") int id, HttpServletRequest request) throws URISyntaxException {
-        GetUserResponse deletedUser = new GetUserResponse(userRepository.findById(id).get());
+        User usr = userRepository.findById(id).get();
+        GetUserResponse deletedUser = new GetUserResponse(usr);
         long initCount = userRepository.count();
-        userRepository.deleteById(id);
+        usr.setDeletedAt(LocalDateTime.now());
+        try {
+            userRepository.save(usr);
+        }catch (Exception e){
+            return ResponseEntity.badRequest().body(new ResponseMessage(e.getMessage()));
+        }
+
         if (initCount<= userRepository.count())
         {
-            return ResponseEntity.badRequest().body(new ErrorResponse("User was not deleted, please contact us"));
+            return ResponseEntity.badRequest().body(new ResponseMessage("User was not deleted, please contact us"));
         }
         else
         {
@@ -211,12 +311,12 @@ public class UserController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<?> saveUser(@RequestBody NewOrUpdateUserRequest rowUser) throws URISyntaxException{
-        User user =  new User(rowUser);
+        User user =  converter.toUser(rowUser);
         if(rowUser.getPassword().length()>0 && rowUser.getPassword().equals(rowUser.getConfirmPassword())) user.setPassword(bCryptPasswordEncoder.encode(rowUser.getPassword()));
         else return ResponseEntity.badRequest().body("passwords do not match!");
         final User createdUser = userRepository.save(user);
         if (createdUser == null) {
-            return ResponseEntity.badRequest().body(new ErrorResponse("User was not saved, please contact us"));
+            return ResponseEntity.badRequest().body(new ResponseMessage("User was not saved, please contact us"));
         } else {
             URI uri = new URI(ServletUriComponentsBuilder.fromUri(new URI(ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString()))
                     .path(Mappings.USERS).queryParam("id",createdUser.getId()).toUriString());

@@ -11,9 +11,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Service
@@ -25,12 +23,14 @@ public class MyUserDetailsService implements UserDetailsService {
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         // Get the User object
-        com.arademia.aqar.entity.User user = userRepository.getUserByUsername(username);
+        String userName = username.toUpperCase();
+        com.arademia.aqar.entity.User user = userRepository.getUserByUsernameIgnoreCase(userName);
         // Get Roles of the User
         Set<SimpleGrantedAuthority> authorities = new HashSet<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
         // Return the UserDetails object
-        return new User(user.getEmail(),user.getPassword(), authorities);
+        String pass = user.getPassword()==null? "test":user.getPassword();
+        return new User(user.getEmail(),pass, authorities);
     }
     @Transactional
     public UserDetails loadUserByEmail(String email) throws UsernameNotFoundException {

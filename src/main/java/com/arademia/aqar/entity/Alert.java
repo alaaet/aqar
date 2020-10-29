@@ -3,6 +3,7 @@ package com.arademia.aqar.entity;
 import com.arademia.aqar.config.ConfigsConst;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.Where;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -12,6 +13,7 @@ import java.util.List;
 @Table(name = ConfigsConst.ALERTS)
 @Entity
 @Data
+@Where(clause="! deleted_at is null")
 @EqualsAndHashCode(of ={"userId", "body"})
 public class Alert {
     @Id

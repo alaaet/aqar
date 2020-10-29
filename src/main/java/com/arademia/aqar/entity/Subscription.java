@@ -3,6 +3,7 @@ package com.arademia.aqar.entity;
 import com.arademia.aqar.config.ConfigsConst;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.Where;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -12,6 +13,7 @@ import java.util.List;
 @Entity
 @Table(name = ConfigsConst.SUBSCRIPTIONS)
 @Data
+@Where(clause="! deleted_at is null")
 @EqualsAndHashCode(of ={"userId,subscriptionType"})
 public class Subscription {
     @Id
@@ -45,4 +47,10 @@ public class Subscription {
     private LocalDateTime updatedAt;
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    // CONSTRUCTORS
+    public Subscription() {
+        super();
+        this.createdAt = this.updatedAt = LocalDateTime.now();
+    }
 }

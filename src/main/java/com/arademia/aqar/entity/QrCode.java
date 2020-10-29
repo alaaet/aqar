@@ -1,17 +1,23 @@
 package com.arademia.aqar.entity;
 
 import com.arademia.aqar.config.ConfigsConst;
+import com.arademia.aqar.config.model.NewOrUpdateTagRequest;
+import com.arademia.aqar.entity.constants.UserConstants;
+import com.arademia.aqar.repos.MaterialTypeRepository;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.Where;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Table(name = ConfigsConst.QR_CODES)
+@Table(name = ConfigsConst.QR_CODES,uniqueConstraints = {@UniqueConstraint(columnNames = {"id","activation_code"})})
 @Entity
 @Data
+@Where(clause="! deleted_at is null")
 @EqualsAndHashCode(of ="")
 public class QrCode {
     @Id
@@ -20,6 +26,10 @@ public class QrCode {
     private Integer id;
     @Column(name = "user_id")
     private Integer userId;
+    @Column(name = "value")
+    private String value;
+    @Column(name = "activation_code")
+    private String activationCode;
 
     // MANY TO MANY
     @ManyToMany(mappedBy = "qrCodes")
@@ -34,6 +44,8 @@ public class QrCode {
     private DimensionType dimensionType;
 
     // DATETIME CONTROLS
+    @Column(name = "assigned_at")
+    private LocalDateTime assignedAt;
     @Column(name = "lost_at")
     private LocalDateTime lostAt;
     @Column(name = "created_at")
@@ -42,4 +54,11 @@ public class QrCode {
     private LocalDateTime updatedAt;
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    public QrCode() {
+        super();
+        this.createdAt = this.updatedAt = LocalDateTime.now();
+    }
+
+
 }

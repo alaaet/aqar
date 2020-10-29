@@ -28,7 +28,8 @@ public class StorageProperties {
     }
 
     public void setLocation(String location) {
-        this.uploadRoute = location;
+        //this.uploadRoute = location;
+        checkFoldersExistence();
     }
 
     // This is a simple method that gets the absolute path of the project
@@ -49,7 +50,7 @@ public class StorageProperties {
     private void checkFoldersExistence() {
         // initialize the main routes depending on whether we are executing on Server or in Local Machine
         if (util.isExecutingOnServer()) {
-            absolutePath = "/var/lib/tomcat/webapps/";
+            absolutePath = "/usr/local/tomcat9/webapps/";
         } else {
             absolutePath = getPath();
             System.out.println(absolutePath);

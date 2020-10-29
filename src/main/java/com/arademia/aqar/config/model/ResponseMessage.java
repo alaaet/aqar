@@ -3,10 +3,10 @@ package com.arademia.aqar.config.model;
 import lombok.Data;
 
 @Data
-public class ErrorResponse {
+public class ResponseMessage {
     private String message;
 
-    public ErrorResponse(String message) {
+    public ResponseMessage(String message) {
         this.message = message;
     }
 }
