@@ -47,6 +47,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 Mappings.USERS+Mappings.REGISTER,
                 Mappings.USERS+Mappings.REFRESH_TOKEN,
                 Mappings.USERS+Mappings.BY_TAG_CODE+"/**",
+                Mappings.COMMENTS,
+                Mappings.COMMENTS+"/**",
                 Mappings.FILES,
                 Mappings.FILES+"/**").permitAll()
                 .anyRequest().authenticated()

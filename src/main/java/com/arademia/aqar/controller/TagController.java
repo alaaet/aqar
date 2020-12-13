@@ -24,6 +24,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.List;
@@ -31,7 +32,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping(value = Mappings.TAGS)
-@CrossOrigin(origins = {"http://localhost:9000","http://167.86.81.129:8082","http://reftag.net"})
+@CrossOrigin(origins = {"http://localhost:9000","http://167.86.81.129:8082","http://reftag.net","https://clavitag.com","https://www.clavitag.com"})
 public class TagController {
 
     private static SupportingTools util = new SupportingTools();
@@ -88,7 +89,7 @@ public class TagController {
         if (tag == null) {
             return ResponseEntity.badRequest().body(new ResponseMessage("We could not fetch this tag,please contact us"));
         } else {
-            return ResponseEntity.ok(tag);
+            return ResponseEntity.ok(new GetTagResponse(tag.get()));
         }
     }
 
@@ -111,12 +112,14 @@ public class TagController {
 
     @PreAuthorize("hasRole('ROLE_USER') OR hasRole('ROLE_ADMIN')")
     @GetMapping(value = Mappings.BY_USER)
-    public ResponseEntity<List<QrCode>> getUserTags(HttpServletRequest request) {
+    public ResponseEntity<?> getUserTags(HttpServletRequest request) {
         Principal principal = request.getUserPrincipal();
         String email = principal.getName();
         User usr = userRepo.getUserByEmail(email);
         List<QrCode> tags = tagRepo.getTagsByUserId(usr.getId());
-        return  ResponseEntity.ok(tags);
+        List<GetTagResponse> processedTags = new ArrayList<>();
+        tags.forEach(tag ->{ processedTags.add(new GetTagResponse(tag));});
+        return  ResponseEntity.ok(processedTags);
     }
 
 
@@ -130,7 +133,7 @@ public class TagController {
         if (rowTag.isAssigned()) tag.setAssignedAt(LocalDateTime.now());
         if (rowTag.isLost()) tag.setLostAt(LocalDateTime.now());
         final QrCode updatedTag = tagRepo.save(tag);
-        if (updatedTag!= null) return ResponseEntity.ok(updatedTag);
+        if (updatedTag!= null) return ResponseEntity.ok(new GetTagResponse(updatedTag));
         else return ResponseEntity.badRequest().body(new ResponseMessage("Update operation failed, please contact us"));
     }
 
@@ -163,7 +166,7 @@ public class TagController {
             URI uri = new URI(ServletUriComponentsBuilder.fromUri(new URI(ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString()))
                     .path(Mappings.TAGS).queryParam("id",createdTag.getId()).toUriString());
             return ResponseEntity.created(uri)
-                    .body(createdTag);
+                    .body(new GetTagResponse(createdTag));
         }
     }
 
@@ -175,9 +178,11 @@ public class TagController {
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping
-    public ResponseEntity<List<QrCode>> getTags() {
+    public ResponseEntity<?> getTags() {
         List<QrCode> tags = (List<QrCode>)tagRepo.findAll();
-        return  ResponseEntity.ok(tags);
+        List<GetTagResponse> processedTags = new ArrayList<>();
+        tags.forEach(tag ->{ processedTags.add(new GetTagResponse(tag));});
+        return  ResponseEntity.ok(processedTags);
     }
 
 

@@ -11,6 +11,7 @@ public class ConfigsConst {
     public static final String BILLING_TYPES = "billing_types";
     public static final String CONTACT_DETAILS = "contact_details";
     public static final String CONVERSATIONS = "conversations";
+    public static final String COMMENTS = "comments";
     public static final String DIMENSION_TYPES = "dimension_types";
     public static final String INVOICES = "invoices";
     public static final String MATERIAL_TYPES = "material_types";

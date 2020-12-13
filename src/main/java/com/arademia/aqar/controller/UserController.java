@@ -3,10 +3,7 @@ package com.arademia.aqar.controller;
 import com.arademia.aqar.config.model.*;
 import com.arademia.aqar.config.service.MyUserDetailsService;
 import com.arademia.aqar.config.util.JwtUtil;
-import com.arademia.aqar.entity.AuthProvider;
-import com.arademia.aqar.entity.ContactDetail;
-import com.arademia.aqar.entity.PublicProfile;
-import com.arademia.aqar.entity.User;
+import com.arademia.aqar.entity.*;
 import com.arademia.aqar.entity.constants.UserConstants;
 import com.arademia.aqar.entity.util.ModelConverter;
 import com.arademia.aqar.repos.*;
@@ -40,7 +37,7 @@ import java.util.*;
 @Slf4j
 @RestController
 @RequestMapping(value = Mappings.USERS)
-@CrossOrigin(origins = {"http://localhost:9000","http://167.86.81.129:8082","http://reftag.net"})
+@CrossOrigin(origins = {"http://localhost:9000","http://167.86.81.129:8082","http://reftag.net","https://clavitag.com","https://www.clavitag.com"})
 public class UserController {
 
     @Autowired
@@ -49,6 +46,8 @@ public class UserController {
     private UserRepository userRepository;
     @Autowired
     private TagRepository tagRepository;
+    @Autowired
+    private AlertRepository alertRepo;
     @Autowired
     private AuthProviderRepository authProviderRepository;
     @Autowired
@@ -187,17 +186,28 @@ public class UserController {
     @GetMapping(Mappings.BY_TAG_CODE+"/{tagCode}")
     public ResponseEntity<?> getPublicProfileByTagCode(@PathVariable("tagCode") String tagCode) {
         try {
-             PublicProfile publicProfile= ppRepo.getPublicProfileByUserId(tagRepository.getTagsByValue(tagCode).get(0).getUserId());
-            if (publicProfile ==null) {
-                return ResponseEntity.badRequest().body(new ResponseMessage("We could not fetch this user,please contact us"));
-            } else {
+            QrCode tag = tagRepository.getTagsByValue(tagCode).get(0);
+            if (tag.getAssignedAt()==null) return ResponseEntity.badRequest().body(new ResponseMessage("tagIsNotAssigned"));
+            try{
+                PublicProfile publicProfile= ppRepo.getPublicProfileByUserId(tag.getUserId());
                 publicProfile.setContactDetails(contactRepo.getContactDetailsByPublicProfileId(publicProfile.getId()));
                 GetPublicDataResponse res = new GetPublicDataResponse(publicProfile);
+                List<GetAlertResponse> alerts = new ArrayList<>();
+                alertRepo.getAlertsByUserId(res.getUserId()).forEach(alert -> {
+                    if(alert.getTags().size()==0||alert.getTags().contains(tag))
+                    {
+                        alerts.add(new GetAlertResponse(alert));
+                    }
+                });
+                res.setAlerts(alerts);
                 return ResponseEntity.ok(res);
+            }
+            catch (Exception e){
+                return ResponseEntity.badRequest().body(new ResponseMessage("We could not fetch this user,please contact us"));
             }
         }
         catch (Exception e){
-            return ResponseEntity.badRequest().body(new ResponseMessage("We could not fetch this user,please contact us"));
+            return ResponseEntity.badRequest().body(new ResponseMessage("tagDoesNotExist"));
         }
     }
 

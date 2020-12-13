@@ -2,6 +2,7 @@ package com.arademia.aqar.entity;
 
 import com.arademia.aqar.config.ConfigsConst;
 import com.arademia.aqar.config.model.NewOrUpdateTagRequest;
+import com.arademia.aqar.entity.billing.BillingInfo;
 import com.arademia.aqar.entity.constants.UserConstants;
 import com.arademia.aqar.repos.MaterialTypeRepository;
 import lombok.Data;
@@ -18,7 +19,7 @@ import java.util.List;
 @Entity
 @Data
 @Where(clause="! deleted_at is null")
-@EqualsAndHashCode(of ="")
+@EqualsAndHashCode(of ="value")
 public class QrCode {
     @Id
     @Column(name = "id")
@@ -31,8 +32,14 @@ public class QrCode {
     @Column(name = "activation_code")
     private String activationCode;
 
+    // ONE TO MANY
+    @Transient
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "qr_code_id")
+    private List<Comment> comments = new ArrayList<Comment>();
+
     // MANY TO MANY
-    @ManyToMany(mappedBy = "qrCodes")
+    @ManyToMany(mappedBy = "tags")
     private List<Alert> alerts = new ArrayList<Alert>();
 
     // MANY TO ONE

@@ -1,7 +1,11 @@
 package com.arademia.aqar.entity.util;
 
+import com.arademia.aqar.config.model.NewCommentRequest;
+import com.arademia.aqar.config.model.NewOrUpdateAlertRequest;
 import com.arademia.aqar.config.model.NewOrUpdateTagRequest;
 import com.arademia.aqar.config.model.NewOrUpdateUserRequest;
+import com.arademia.aqar.entity.Alert;
+import com.arademia.aqar.entity.Comment;
 import com.arademia.aqar.entity.QrCode;
 import com.arademia.aqar.entity.User;
 import com.arademia.aqar.entity.constants.UserConstants;
@@ -12,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Component
@@ -45,4 +51,26 @@ public class ModelConverter {
     }
 
 
+    public Alert toAlert(NewOrUpdateAlertRequest rawAlert) {
+        Alert alert = new Alert();
+        alert.setTitle(rawAlert.getTitle());
+        alert.setBody(rawAlert.getBody());
+        alert.setCompensation((double)rawAlert.getCompensation());
+        List<QrCode> tags = new ArrayList<QrCode>();
+        tagRepo.findAllById(rawAlert.getTagsIds()).forEach(tag ->{ tags.add(tag);});
+        alert.setTags(tags);
+        return alert;
+    }
+
+    public Comment toComment(NewCommentRequest rawComment){
+        Comment comment = new Comment();
+        QrCode tag = tagRepo.getTagsByValue(rawComment.getTagCode()).get(0);
+        comment.setQrCodeId(tag.getId());
+        comment.setSender(rawComment.getSender());
+        comment.setTitle(rawComment.getTitle());
+        comment.setBody(rawComment.getBody());
+        comment.setImage(rawComment.getImage());
+        comment.setIsOwner(rawComment.getIsOwner());
+        return comment;
+    }
 }

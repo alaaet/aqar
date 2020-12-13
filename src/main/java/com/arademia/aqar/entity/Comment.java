@@ -7,32 +7,30 @@ import org.hibernate.annotations.Where;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
-@Table(name = ConfigsConst.ALERTS,uniqueConstraints = {@UniqueConstraint(columnNames = {"id"})})
+@Table(name = ConfigsConst.COMMENTS,uniqueConstraints = {@UniqueConstraint(columnNames = {"title","body"})})
 @Entity
 @Data
 @Where(clause="! deleted_at is null")
-@EqualsAndHashCode(of ={"userId", "body"})
-public class Alert {
+@EqualsAndHashCode(of ={"title", "body"})
+public class Comment {
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
-    @Column(name = "user_id")
-    private Integer userId;
-    @Column(name = "compensation")
-    private Double compensation;
+    @Column(name = "qr_code_id")
+    private Integer qrCodeId;
+    @Column(name = "sender")
+    private String sender;
     @Column(name = "title")
     private String title;
     @Column(name = "body")
     private String body;
+    @Column(name = "image")
+    private String image;
+    @Column(name = "is_owner")
+    private Boolean isOwner;
 
-    // MANY TO MANY
-    @ManyToMany
-    @JoinTable(name = ConfigsConst.ALERT_QRS, joinColumns = {@JoinColumn(name = "alert_id")},inverseJoinColumns = {@JoinColumn(name = "qr_code_id")})
-    private List<QrCode> tags = new ArrayList<QrCode>();
 
     // DATETIME CONTROLS
     @Column(name = "created_at")
@@ -42,11 +40,8 @@ public class Alert {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-
-    public Alert() {
+    public Comment(){
         super();
         this.createdAt = this.updatedAt = LocalDateTime.now();
     }
-
 }
-

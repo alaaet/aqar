@@ -4,6 +4,7 @@ import com.arademia.aqar.entity.ContactDetail;
 import com.arademia.aqar.entity.PublicProfile;
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -16,6 +17,7 @@ GetPublicDataResponse {
     private Boolean enableProfilePicture;
     private String profilePicture;
     private List<ContactDetail> contactDetails;
+    private List<GetAlertResponse> alerts = new ArrayList<>();
 
     public GetPublicDataResponse(PublicProfile pp){
         this.id = pp.getId();

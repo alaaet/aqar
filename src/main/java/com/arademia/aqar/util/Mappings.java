@@ -6,7 +6,6 @@ public final class Mappings {
 
     // USERS
     public static final String  USERS = "/users";
-    public static final String  BY_TAG_CODE = "/by-tag-code";
     public static final String  AUTHENTICATE = "/authenticate";
     public static final String  SOCIAL_AUTHENTICATE = "/social-authenticate";
     public static final String  REGISTER = "/register";
@@ -22,12 +21,22 @@ public final class Mappings {
     // TAGS
     public static final String  TAGS = "/tags";
     public static final String  ACTIVATE = "/activate";
-    public static final String BY_USER = "/by-user";
     public static final String MATERIAL_TYPES = "/material-types";
     public static final String DIMENSION_TYPES = "/dimension-types";
     public static final String GENERATE_ACTIVATION_CODE = "/gen-act-code";
 
+    // ALERTS
+    public static final String ALERTS = "/alerts";
 
+    // MAIL
+    public static final String MAIL = "/mail";
+
+    // COMMENTS
+    public static final String COMMENTS = "/comments";
+
+    // COMMONS
+    public static final String BY_USER = "/by-user";
+    public static final String  BY_TAG_CODE = "/by-tag-code";
 
     // == constructors ==
     // private: because there is no need to instantiate it.
