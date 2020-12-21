@@ -18,7 +18,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import com.arademia.aqar.util.SupportingTools;
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -27,12 +26,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.List;
 
 @Slf4j
 @RestController
 @RequestMapping(value = Mappings.TAGS)
-@CrossOrigin(origins = {"http://localhost:9000","http://167.86.81.129:8082","http://reftag.net","https://clavitag.com","https://www.clavitag.com"})
+@CrossOrigin(origins = {"http://localhost:9000","http://reftag.net","https://clavitag.com","https://www.clavitag.com","http://clavitag.com","http://www.clavitag.com"})
 public class TagController {
 
     private static SupportingTools util = new SupportingTools();

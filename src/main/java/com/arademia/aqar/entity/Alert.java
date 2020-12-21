@@ -32,7 +32,7 @@ public class Alert {
     // MANY TO MANY
     @ManyToMany
     @JoinTable(name = ConfigsConst.ALERT_QRS, joinColumns = {@JoinColumn(name = "alert_id")},inverseJoinColumns = {@JoinColumn(name = "qr_code_id")})
-    private List<QrCode> tags = new ArrayList<QrCode>();
+    private List<QrCode> tags = new ArrayList<>();
 
     // DATETIME CONTROLS
     @Column(name = "created_at")

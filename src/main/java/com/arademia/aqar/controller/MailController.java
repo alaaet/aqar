@@ -18,7 +18,7 @@ import java.net.URISyntaxException;
 @Slf4j
 @RestController
 @RequestMapping(value = Mappings.MAIL)
-@CrossOrigin(origins = {"http://localhost:9000","http://167.86.81.129:8082","http://reftag.net","https://clavitag.com","https://www.clavitag.com"})
+@CrossOrigin(origins = {"http://localhost:9000","http://reftag.net","https://clavitag.com","https://www.clavitag.com","http://clavitag.com","http://www.clavitag.com"})
 public class MailController {
 
     @Autowired
